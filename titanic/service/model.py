@@ -16,6 +16,8 @@ class Model(ABC):
 
 class RandomModel(Model):
 
+    __version__ = '0.0.1'
+
     def train(self, dataset):
         self.r = random
 
