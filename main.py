@@ -14,3 +14,5 @@ if __name__ == '__main__':
     result = m1.predict(test_dataset)
 
     print(result)
+
+    result.to_csv('output.csv', sep=',', header=True, index=False)

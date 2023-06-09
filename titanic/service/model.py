@@ -29,7 +29,7 @@ class RandomModel(Model):
         
         survived = []
 
-        for _ in range(dataset.shape[1]):
+        for _ in range(dataset.shape[0]):
             survived.append(self.r.randint(0, 1))
 
         dataset['Survived'] = survived
