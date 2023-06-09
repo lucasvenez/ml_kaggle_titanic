@@ -37,4 +37,17 @@ class RandomModel(Model):
         dataset['Survived'] = survived
 
         return dataset
-    
+
+import lightgbm as lgb
+
+class LightGBMModel(Model):
+
+    def __init__(self):
+        self.model = None
+        self.params: dict = {}
+
+    def train(self, dataset):
+        self.model = lgb.train(params=self.params, train_set=dataset)
+
+    def predict(self, dataset):
+        return self.model 
