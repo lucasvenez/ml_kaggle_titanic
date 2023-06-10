@@ -1,6 +1,8 @@
+import lightgbm as lgb
 import random
 
 from abc import ABC, abstractmethod
+
 
 
 class Model(ABC):
@@ -38,16 +40,53 @@ class RandomModel(Model):
 
         return dataset
 
-import lightgbm as lgb
 
 class LightGBMModel(Model):
 
+    __version__ = '0.0.1'
+
     def __init__(self):
+
         self.model = None
-        self.params: dict = {}
+
+        self.params: dict = {
+            'boosting_type': 'gbdt',
+            'objective': 'binary',
+            'metric': 'binary_logloss',
+            'num_leaves': 90,
+            'learning_rate': 0.05,
+            'feature_fraction': 0.9,
+            'bagging_fraction': 0.8,
+            'bagging_freq': 5,
+            'verbose': 1
+        }
+
+        self.response_column = 'Survived'
+        self.invalid_columns = ['PassenderId', 'Name', 'Sex', 'Ticket', 'Cabin', 'Embarked', self.response_column]
 
     def train(self, dataset):
-        self.model = lgb.train(params=self.params, train_set=dataset)
+        
+        y = dataset[self.response_column]
+
+        for invalid_column in self.invalid_columns:
+            if invalid_column in dataset.columns:
+                del dataset[invalid_column]
+
+        X = dataset
+
+        lgb_train = lgb.Dataset(X, y)
+        self.model = lgb.train(params=self.params, train_set=lgb_train, num_boost_round=500)
 
     def predict(self, dataset):
-        return self.model 
+
+        result = dataset[['PassengerId']]
+
+        for invalid_column in self.invalid_columns:
+            if invalid_column in dataset.columns:
+                del dataset[invalid_column]
+
+        y_pred = self.model.predict(dataset, num_iteration=self.model.best_iteration)
+        result['Survived'] = [1 if y >= .5 else 0 for y in y_pred]
+
+        return result
+    
