@@ -58,24 +58,50 @@ class LightGBMModel(Model):
             'feature_fraction': 0.9,
             'bagging_fraction': 0.8,
             'bagging_freq': 5,
-            'verbose': 1
+            'verbose': 1,
+            'max_bin': 10
         }
 
         self.response_column = 'Survived'
         self.invalid_columns = ['PassenderId', 'Name', 'Sex', 'Ticket', 'Cabin', 'Embarked', self.response_column]
 
-    def train(self, dataset):
+        self.validation_dataset = None
+        self.X_validation = None
+        self.y_validation = None
+
+    def train(self, dataset, train_percentage=None):
         
-        y = dataset[self.response_column]
+        if train_percentage is not None:
+
+            assert 0 < train_percentage < 1
+
+            upper_bound = int(dataset.shape[0] * train_percentage)
+
+            train_dataset = dataset.iloc[:upper_bound]
+            self.validation_dataset = dataset.iloc[upper_bound:]
+        
+        else:
+
+            train_dataset = dataset
+            self.validation_dataset = dataset
+
+        y = train_dataset[self.response_column]
+        self.y_validation = self.validation_dataset[self.response_column]
 
         for invalid_column in self.invalid_columns:
             if invalid_column in dataset.columns:
-                del dataset[invalid_column]
+                try:
+                    del train_dataset[invalid_column]
+                    del self.validation_dataset[invalid_column]
+                except:
+                    pass
 
-        X = dataset
+        X = train_dataset
+        self.X_validation = self.validation_dataset
 
         lgb_train = lgb.Dataset(X, y)
-        self.model = lgb.train(params=self.params, train_set=lgb_train, num_boost_round=500)
+        lgb_valid = lgb.Dataset(self.X_validation, self.y_validation)
+        self.model = lgb.train(params=self.params, train_set=lgb_train, valid_sets=[lgb_valid], num_boost_round=500, early_stopping_rounds=5, verbose_eval=3)
 
     def predict(self, dataset):
 
