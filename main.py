@@ -1,6 +1,7 @@
 from titanic.service import TitanicDatasetLoader
 from titanic.service import Model, RandomModel, LightGBMModel
 
+import argparse
 import numpy as np
 
 
@@ -18,6 +19,18 @@ def submit_to_kaggle(result_file_path, message=''):
 
 if __name__ == '__main__':
     
+    # Create the argument parser
+    parser = argparse.ArgumentParser(description='Training and submitting')
+
+    # Add command-line arguments
+    parser.add_argument('--kaggle', action='store_true', help='Send prediction to kaggle')
+
+    # Parse the arguments
+    args = parser.parse_args()
+
+    # Access the values of the arguments
+    should_submit = args.kaggle
+
     loader: TitanicDatasetLoader = TitanicDatasetLoader()
     train_dataset = loader.read_train_dataset()
 
@@ -31,7 +44,7 @@ if __name__ == '__main__':
 
     print(result)
 
-    if True:
+    if should_submit:
 
         result_file_path = 'output.csv'
         result.to_csv(result_file_path, sep=',', header=True, index=False)
