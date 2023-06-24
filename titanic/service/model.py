@@ -45,7 +45,7 @@ class LightGBMModel(Model):
 
     __version__ = '0.0.1'
 
-    def __init__(self):
+    def __init__(self, train_percentage: int = None):
 
         self.model = None
 
@@ -65,42 +65,65 @@ class LightGBMModel(Model):
         self.response_column = 'Survived'
         self.invalid_columns = ['PassenderId', 'Name', 'Sex', 'Ticket', 'Cabin', 'Embarked', self.response_column]
 
-        self.validation_dataset = None
-        self.X_validation = None
-        self.y_validation = None
+        self.valid_dataset = None
 
-    def train(self, dataset, train_percentage=None):
-        
-        if train_percentage is not None:
+        self.X_train = None
+        self.y_train = None
 
-            assert 0 < train_percentage < 1
+        self.X_valid = None
+        self.y_valid = None
 
-            upper_bound = int(dataset.shape[0] * train_percentage)
+        self.train_percentage: int | None = train_percentage
+        self.columns = None
 
-            train_dataset = dataset.iloc[:upper_bound]
-            self.validation_dataset = dataset.iloc[upper_bound:]
+    def __pre_processing(self):
+        self.X_train
+
+    def split_train_valid(self, dataset):
+
+        if self.train_percentage is not None:
+
+            assert 0 < self.train_percentage < 1
+
+            upper_bound = int(dataset.shape[0] * self.train_percentage)
+
+            self.train_dataset = dataset.iloc[:upper_bound]
+            self.valid_dataset = dataset.iloc[upper_bound:]
         
         else:
 
-            train_dataset = dataset
-            self.validation_dataset = dataset
+            self.train_dataset = dataset
+            self.valid_dataset = dataset
 
-        y = train_dataset[self.response_column]
-        self.y_validation = self.validation_dataset[self.response_column]
+        self.columns = dataset.columns
+
+    def split_x_y(self):
+
+        self.y_train = self.train_dataset[self.response_column]
+        self.y_valid = self.valid_dataset[self.response_column]
 
         for invalid_column in self.invalid_columns:
-            if invalid_column in dataset.columns:
+            if invalid_column in self.columns:
                 try:
-                    del train_dataset[invalid_column]
-                    del self.validation_dataset[invalid_column]
+                    del self.train_dataset[invalid_column]
+                    del self.valid_dataset[invalid_column]
                 except:
                     pass
 
-        X = train_dataset
-        self.X_validation = self.validation_dataset
+        self.X_train = self.train_dataset
+        self.X_valid = self.valid_dataset
 
-        lgb_train = lgb.Dataset(X, y)
-        lgb_valid = lgb.Dataset(self.X_validation, self.y_validation)
+
+    def train(self, dataset):
+        
+        self.split_train_valid(dataset)
+        self.split_x_y()
+
+        self.__pre_processing()
+
+        lgb_train = lgb.Dataset(self.X_train, self.y_train)
+        lgb_valid = lgb.Dataset(self.X_valid, self.y_valid)
+
         self.model = lgb.train(params=self.params, train_set=lgb_train, valid_sets=[lgb_valid], num_boost_round=500, early_stopping_rounds=5, verbose_eval=3)
 
     def predict(self, dataset):

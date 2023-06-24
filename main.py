@@ -24,19 +24,24 @@ if __name__ == '__main__':
 
     # Add command-line arguments
     parser.add_argument('--kaggle', action='store_true', help='Send prediction to kaggle')
+    parser.add_argument('--train-percentage', help='Train percentage', type=float)
 
     # Parse the arguments
     args = parser.parse_args()
 
     # Access the values of the arguments
     should_submit = args.kaggle
+    train_percentage = args.train_percentage
+    
+    if isinstance(train_percentage, float) and (train_percentage <= 0 or train_percentage >= 1):
+        train_percentage = None
 
     loader: TitanicDatasetLoader = TitanicDatasetLoader()
     train_dataset = loader.read_train_dataset()
 
     y = train_dataset['Survived']
 
-    m1: Model = LightGBMModel()
+    m1: Model = LightGBMModel(train_percentage=train_percentage)
     m1.train(train_dataset)
 
     test_dataset = loader.read_test_dataset()
@@ -51,8 +56,8 @@ if __name__ == '__main__':
         submit_to_kaggle(result_file_path, message=f'{m1.__class__.__name__} v{m1.__version__}')
     
     else:
-        y_pred = np.array(m1.predict(m1.X_validation)['Survived'].values)
-        accuracy = sum(m1.y_validation.values == y_pred) / len(y_pred)
+        y_pred = np.array(m1.predict(m1.X_valid)['Survived'].values)
+        accuracy = sum(m1.y_valid.values == y_pred) / len(y_pred)
 
         print('\n==========================================')
         print(f'Accuracy: {round(accuracy * 100, 2)}%')
