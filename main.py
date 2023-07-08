@@ -39,7 +39,7 @@ if __name__ == '__main__':
     pre_processing: TitanicPreProcessing = TitanicPreProcessing()
     loader: TitanicDatasetLoader = TitanicDatasetLoader()
     train_dataset = loader.read_train_dataset()
-    pre_processing.pre_processing(train_dataset)
+    pre_processing.fit(train_dataset)
 
     y = train_dataset['Survived']
 
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     m1.train(train_dataset)
 
     test_dataset = loader.read_test_dataset()
-    pre_processing.pre_processing(test_dataset)
+    pre_processing.fit(test_dataset)
     result = m1.predict(test_dataset)
 
     print(result)
