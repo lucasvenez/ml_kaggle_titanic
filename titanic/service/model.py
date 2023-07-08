@@ -64,7 +64,6 @@ class LightGBMModel(Model):
         }
 
         self.response_column = 'Survived'
-        self.invalid_columns = ['PassenderId', 'Name', 'Ticket', 'Cabin', 'Embarked']
 
         self.valid_dataset = None
 
@@ -79,14 +78,7 @@ class LightGBMModel(Model):
         self.dataset = None
         self.columns: list = []
 
-    def __pre_processing__(self):
-
-        for invalid_column in self.invalid_columns:
-            if invalid_column in self.dataset.columns:
-                del self.dataset[invalid_column]
-
-        self.dataset['Sex'].replace('male', 0, inplace=True)
-        self.dataset['Sex'].replace('female', 1, inplace=True)
+        self.pre_formatted_datasets = []
 
     def set_current_dataset(self, dataset: DataFrame) -> None:
         assert isinstance(dataset, DataFrame)
@@ -126,7 +118,6 @@ class LightGBMModel(Model):
     def train(self, dataset):
         
         self.set_current_dataset(dataset)
-        self.__pre_processing__()
 
         self.split_into_train_valid()
         self.split_into_input_output()
@@ -141,10 +132,35 @@ class LightGBMModel(Model):
         result = dataset[['PassengerId']]
 
         self.set_current_dataset(dataset)
-        self.__pre_processing__()
 
         y_pred = self.model.predict(dataset, num_iteration=self.model.best_iteration)
         result['Survived'] = [1 if y >= .5 else 0 for y in y_pred]
 
         return result
+    
+class TitanicPreProcessing:
+    
+    def __init__(self) -> None:
+        self.invalid_columns = ['PassenderId', 'Name', 'Ticket', 'Embarked']
+
+    def fit(self, dataset):
+
+        for invalid_column in self.invalid_columns:
+            if invalid_column in dataset.columns:
+                del dataset[invalid_column]
+
+        dataset['Sex'].replace('male', 0, inplace=True)
+        dataset['Sex'].replace('female', 1, inplace=True)
+
+        dataset['Cabin'].fillna('X', inplace=True)
+        dataset['Cabin'] = dataset['Cabin'].apply(lambda x: x[0])
+        dataset['Cabin'].replace({'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7, 'T': 8, 'X': 9}, inplace=True)
+
+    def predict(self):
+        pass
+
+    def fit_predict(self, dataset):
+        self.fit(dataset)
+        return self.predict(dataset)
+
     

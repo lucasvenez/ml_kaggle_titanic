@@ -1,5 +1,5 @@
 from titanic.service import TitanicDatasetLoader
-from titanic.service import Model, RandomModel, LightGBMModel
+from titanic.service import Model, RandomModel, LightGBMModel, TitanicPreProcessing
 
 import argparse
 import numpy as np
@@ -36,8 +36,10 @@ if __name__ == '__main__':
     if isinstance(train_percentage, float) and (train_percentage <= 0 or train_percentage >= 1):
         train_percentage = None
 
+    pre_processing: TitanicPreProcessing = TitanicPreProcessing()
     loader: TitanicDatasetLoader = TitanicDatasetLoader()
     train_dataset = loader.read_train_dataset()
+    pre_processing.pre_processing(train_dataset)
 
     y = train_dataset['Survived']
 
@@ -45,6 +47,7 @@ if __name__ == '__main__':
     m1.train(train_dataset)
 
     test_dataset = loader.read_test_dataset()
+    pre_processing.pre_processing(test_dataset)
     result = m1.predict(test_dataset)
 
     print(result)
