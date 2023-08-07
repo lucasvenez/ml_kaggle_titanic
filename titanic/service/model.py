@@ -125,7 +125,7 @@ class LightGBMModel(Model):
         lgb_train = lgb.Dataset(self.X_train, self.y_train)
         lgb_valid = lgb.Dataset(self.X_valid, self.y_valid)
 
-        self.model = lgb.train(params=self.params, train_set=lgb_train, valid_sets=[lgb_valid], num_boost_round=500, early_stopping_rounds=5, verbose_eval=3)
+        self.model = lgb.train(params=self.params, train_set=lgb_train, valid_sets=[lgb_valid], num_boost_round=500)
 
     def predict(self, dataset):
 

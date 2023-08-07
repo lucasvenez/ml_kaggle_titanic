@@ -1,3 +1,4 @@
 kaggle
 pandas
 lightgbm
+numpy   
